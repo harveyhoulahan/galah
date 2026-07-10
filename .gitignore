@@ -1,0 +1,7 @@
+.venv/
+data/
+runs/
+figures/
+__pycache__/
+*.pt
+*.bin
