@@ -21,8 +21,15 @@ from pathlib import Path
 
 from .model import LADDER
 
+try:
+    from setproctitle import setproctitle
+except ImportError:
+    def setproctitle(_: str) -> None:  # shared boxes without the package: no-op
+        pass
+
 
 def main() -> None:
+    setproctitle("train-worker-sweep")  # shared box: keep argv off other users' ps/btop
     ap = argparse.ArgumentParser()
     ap.add_argument("--budgets", default="1e15,3e15,1e16,3e16,1e17")
     ap.add_argument("--data", default="data")

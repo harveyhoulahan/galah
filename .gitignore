@@ -5,3 +5,5 @@ figures/
 __pycache__/
 *.pt
 *.bin
+*.log
+runs_stab/

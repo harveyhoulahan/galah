@@ -32,6 +32,12 @@ import torch
 from .data import ByteBatches
 from .model import LADDER, Galah
 
+try:
+    from setproctitle import setproctitle
+except ImportError:
+    def setproctitle(_: str) -> None:  # shared boxes without the package: no-op
+        pass
+
 
 def cosine_lr(step: int, total: int, base: float, warmup: int, floor_frac: float = 0.1) -> float:
     if step < warmup:
@@ -54,6 +60,11 @@ def val_bits_per_byte(model: Galah, batches: ByteBatches, iters: int = 20, batch
 
 
 def main() -> None:
+    # Shared box: hide the project name and hyperparameters from other users'
+    # ps/btop, which read argv by default. Doesn't hide cwd or file contents
+    # (those already need ptrace/root to see); just the command line itself.
+    setproctitle("train-worker")
+
     ap = argparse.ArgumentParser()
     ap.add_argument("--rung", required=True, choices=sorted(LADDER.keys()))
     ap.add_argument("--budget", type=float, required=True, help="training FLOPs, e.g. 1e16")
@@ -62,6 +73,9 @@ def main() -> None:
     ap.add_argument("--seq", type=int, default=1024)
     ap.add_argument("--tokens-per-step", type=int, default=131072, help="global batch in bytes")
     ap.add_argument("--seed", type=int, default=1337)
+    ap.add_argument("--lr-scale", type=float, default=1.0,
+                    help="multiplier on the width-rule lr (stability-annex runs only; 1.0 = frozen recipe)")
+    ap.add_argument("--suffix", default="", help="appended to the run name, e.g. -lr0.5")
     ap.add_argument("--compile", action="store_true")
     ap.add_argument("--log-every", type=int, default=50)
     ap.add_argument("--val-every", type=int, default=0, help="0 = auto (~10 evals per run)")
@@ -81,11 +95,11 @@ def main() -> None:
     steps = max(50, int(args.budget / (fpt * args.tokens_per_step)))
     tokens_total = steps * args.tokens_per_step
     batch = max(1, args.tokens_per_step // args.seq)
-    base_lr = 3e-3 * (128 / cfg.d_model) ** 0.5
+    base_lr = 3e-3 * (128 / cfg.d_model) ** 0.5 * args.lr_scale
     warmup = max(20, steps // 50)
     val_every = args.val_every or max(50, steps // 10)
 
-    name = f"{args.rung}_C{args.budget:.0e}".replace("+", "")
+    name = f"{args.rung}_C{args.budget:.0e}".replace("+", "") + args.suffix
     run_dir = args.out / name
     run_dir.mkdir(parents=True, exist_ok=True)
     log_f = open(run_dir / "log.jsonl", "w", encoding="utf-8")
@@ -134,6 +148,7 @@ def main() -> None:
         "n_params_non_emb": n, "n_params_total": cfg.n_params_total,
         "budget_flops": args.budget, "flops_per_token": fpt,
         "tokens": tokens_total, "steps": steps,
+        "seed": args.seed, "lr_scale": args.lr_scale, "base_lr": base_lr,
         "final_train_loss_ema": round(ema_loss, 5),
         "final_val_bpb": round(val_bits_per_byte(model, val_b, iters=60), 5),
         "wall_sec": round(time.time() - t0, 1),

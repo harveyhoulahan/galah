@@ -136,6 +136,8 @@ class Galah(nn.Module):
 # The size ladder for the IsoFLOP sweep. head_dim is pinned at 32 so every
 # rung differs only in (depth, width) — the study varies N, nothing else.
 LADDER: dict[str, GalahConfig] = {
+    "galah-0.1m": GalahConfig(d_model=64, n_layer=2, n_head=2),
+    "galah-0.2m": GalahConfig(d_model=96, n_layer=2, n_head=3),
     "galah-0.3m": GalahConfig(d_model=96, n_layer=3, n_head=3),
     "galah-0.8m": GalahConfig(d_model=128, n_layer=4, n_head=4),
     "galah-1.5m": GalahConfig(d_model=160, n_layer=5, n_head=5),
@@ -145,4 +147,5 @@ LADDER: dict[str, GalahConfig] = {
     "galah-18m": GalahConfig(d_model=384, n_layer=10, n_head=12),
     "galah-38m": GalahConfig(d_model=512, n_layer=12, n_head=16),
     "galah-69m": GalahConfig(d_model=640, n_layer=14, n_head=20),
+    "galah-113m": GalahConfig(d_model=768, n_layer=16, n_head=24),
 }

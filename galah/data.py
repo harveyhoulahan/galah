@@ -78,6 +78,11 @@ class ByteBatches:
 
 
 def main() -> None:
+    try:
+        from setproctitle import setproctitle
+        setproctitle("train-worker-data")  # shared box: keep argv off other users' ps/btop
+    except ImportError:
+        pass
     ap = argparse.ArgumentParser(prog="python -m galah.data")
     sub = ap.add_subparsers(dest="cmd", required=True)
     p = sub.add_parser("prepare", help="download + pack a byte corpus")
