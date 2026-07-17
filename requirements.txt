@@ -4,3 +4,4 @@ datasets
 tqdm
 matplotlib
 scipy
+setproctitle
