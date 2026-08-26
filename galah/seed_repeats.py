@@ -102,7 +102,7 @@ def main() -> None:
         cmd = [
             sys.executable, "-m", "galah.train",
             "--rung", rung, "--budget", f"{C:.3e}",
-            "--seed", str(seed), "--suffix", f"-seed{seed}",
+            "--seed", str(seed), f"--suffix=-seed{seed}",
             "--data", args.data, "--out", str(args.out),
             "--tokens-per-step", str(args.tokens_per_step),
         ]
