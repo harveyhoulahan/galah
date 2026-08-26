@@ -89,12 +89,15 @@ def _vertex(rs: list[dict], y: np.ndarray | None = None) -> dict:
     imin = int(np.argmin(y))
     censored = imin in (0, len(rs) - 1)
     a, b, c = np.polyfit(x, y, 2)
-    if a <= 0 or censored:
+    # A vertex outside the sampled range is not a located optimum: clipping it to
+    # the edge would pair that N with an L the parabola predicts somewhere else
+    # (it can even go negative). Treat it as censored, like an edge minimum.
+    if a <= 0 or censored or not x[0] <= -b / (2 * a) <= x[-1]:
         n_opt = float(rs[imin]["n_params_non_emb"])
         l_opt = float(y.min())
         censored = True
     else:
-        n_opt = float(np.exp(np.clip(-b / (2 * a), x[0], x[-1])))
+        n_opt = float(np.exp(-b / (2 * a)))
         l_opt = float(c - b * b / (4 * a))
     fpt_opt = float(np.exp(np.interp(np.log(n_opt), x,
                                      np.log([r["flops_per_token"] for r in rs]))))
