@@ -294,8 +294,6 @@ def plots(runs: list[dict], optima: list[dict], stab: list[dict], figs: Path) ->
     censored = [o for o in optima if o["censored"]]
     if len(interior) >= 2:
         fig, ax = plt.subplots(figsize=(6, 4.5))
-        ax.set_xscale("log")
-        ax.set_yscale("log")
         if any(o.get("N_opt_std") for o in interior):
             ax.errorbar([o["C"] for o in interior], [o["N_opt"] for o in interior],
                         yerr=[o.get("N_opt_std") or np.nan for o in interior],
@@ -306,6 +304,10 @@ def plots(runs: list[dict], optima: list[dict], stab: list[dict], figs: Path) ->
         if censored:
             ax.plot([o["C"] for o in censored], [o["N_opt"] for o in censored], "v",
                     mfc="none", label="censored (upper bound)")
+        # set after plotting: scaling an empty axes seeds limits at the log
+        # default and autoscale then unions them with the data range
+        ax.set_xscale("log")
+        ax.set_yscale("log")
         ax.set_xlabel("compute C (FLOPs)")
         ax.set_ylabel("N_opt")
         ax.set_title("compute-optimal frontier")
